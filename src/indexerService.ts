@@ -16,6 +16,10 @@ import {
   Position as LspPosition,
 } from "vscode-languageserver";
 
+/**
+ * Manages the symbol index for the workspace.
+ * Handles finding, parsing, and storing definitions and references from Apex files.
+ */
 export class IndexerService {
   // In-memory index (can be optimized or backed by disk)
   private definitions = new Map<string, Definition[]>(); // Key: symbol name
@@ -24,7 +28,11 @@ export class IndexerService {
   private projectRoot: string | undefined;
   private isIndexing = false;
 
-  // Map our internal 1-based Range to LSP 0-based Range
+  /**
+   * Converts an internal 1-based index range to a 0-based LSP range.
+   * @param range - The internal IndexRange.
+   * @returns The corresponding LSP Range.
+   */
   private toLspRange(range: IndexRange): LspRange {
     return LspRange.create(
       LspPosition.create(range.start.line - 1, range.start.column - 1),
@@ -155,14 +163,13 @@ export class IndexerService {
       console.error(
         `[IndexerService] Error during indexing: ${error.message || error}`,
       );
-    } finally {
-      setProgress(progressToken, "report", "Indexing complete.");
-      setTimeout(() => {
-        setProgress(progressToken, "end");
-      }, 3000);
-    }
+   } finally {
+     setProgress(progressToken, "report", "Indexing complete.");
+     // Use the delay parameter in setProgress directly
+     setProgress(progressToken, "end", "", 100, 3000);
+   }
 
-    const duration = Date.now() - startTime;
+   const duration = Date.now() - startTime;
     console.log(`[IndexerService] Indexing complete in ${duration}ms.`);
     console.log(
       `[IndexerService] Indexed ${this.countSymbols(this.definitions)} definitions and ${this.countSymbols(this.references)} references across ${this.filesIndexed.size} files.`,
@@ -295,13 +302,12 @@ export class IndexerService {
         setProgress(progressToken, "begin", `Re-indexing file: ${filePath}`);
         // Simple approach: re-index the saved file asynchronously
         this.indexFile(filePath)
-          .catch((e) => console.error(`Error re-indexing ${filePath}:`, e))
-          .finally(() => {
-            setTimeout(() => {
-              setProgress(progressToken, "end");
-            }, 3000);
-          });
-      }
-    }
+         .catch((e) => console.error(`Error re-indexing ${filePath}:`, e))
+         .finally(() => {
+           // Use the delay parameter in setProgress directly
+           setProgress(progressToken, "end", "", 100, 3000);
+         });
+     }
+   }
   }
 }

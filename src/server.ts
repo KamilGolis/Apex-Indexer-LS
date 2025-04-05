@@ -18,8 +18,8 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { IndexerService } from "./indexerService";
-import { uriToPath, setProgress } from "./utils";
-import { SymbolLocationParams } from "./types"; // Import the custom param type
+import { uriToPath, setProgress, extractSymbolNameAtOffset } from "./utils";
+import { ReferenceParams, SymbolLocationParams } from "./types"; // Import the custom param type
 
 // Create a connection for the server.
 export const connection = createConnection(ProposedFeatures.all);
@@ -36,6 +36,12 @@ let hasWorkspaceFolderCapability = false;
 
 let rootUri: string | null = null; // Store the primary workspace URI
 
+/**
+ * Handles the LSP initialize request.
+ * Sets up capabilities, determines the workspace root, and starts background indexing.
+ * @param params - The initialization parameters from the client.
+ * @returns The initialization result containing server capabilities.
+ */
 connection.onInitialize((params: InitializeParams) => {
   const capabilities = params.capabilities;
 
@@ -88,6 +94,7 @@ connection.onInitialize((params: InitializeParams) => {
       // referencesProvider: false,
 
       // Add other capabilities later if needed (hover, completion, etc.)
+      referencesProvider: true,
     },
   };
 
@@ -102,6 +109,10 @@ connection.onInitialize((params: InitializeParams) => {
   return result;
 });
 
+/**
+ * Handles the LSP initialized notification.
+ * Registers capabilities like configuration changes and workspace folder changes.
+ */
 connection.onInitialized(() => {
   if (hasConfigurationCapability) {
     connection.client.register(
@@ -122,7 +133,12 @@ connection.onInitialized(() => {
 
 // --- Custom Method Handlers ---
 
-// Handler for Definition Request
+/**
+ * Handles the custom '$/apexIndexer/definitionForSymbol' request.
+ * Finds definitions for a given symbol using the indexer.
+ * @param params - Parameters containing the symbol and document context.
+ * @returns An array of LSP Locations for the definitions, or null if none found or an error occurs.
+ */
 connection.onRequest(
   "$/apexIndexer/definitionForSymbol",
   (params: SymbolLocationParams): LspLocation[] | null => {
@@ -168,7 +184,12 @@ connection.onRequest(
   },
 );
 
-// Handler for References Request
+/**
+ * Handles the custom '$/apexIndexer/referencesForSymbol' request.
+ * Finds references for a given symbol using the indexer.
+ * @param params - Parameters containing the symbol and document context.
+ * @returns An array of LSP Locations for the references, or null if none found or an error occurs.
+ */
 connection.onRequest(
   "$/apexIndexer/referencesForSymbol",
   (params: SymbolLocationParams): LspLocation[] | null => {
@@ -214,12 +235,77 @@ connection.onRequest(
   },
 );
 
+connection.onRequest(
+  "textDocument/references",
+  (params: ReferenceParams): LspLocation[] | null => {
+    const progressToken = "standardRequest";
+    const document = documents.get(params.textDocument.uri);
+
+    if (!document) {
+      console.warn(`[Server] Document not found: ${params.textDocument.uri}`);
+      return null;
+    }
+
+    const offset = document.offsetAt(params.position);
+    const text = document.getText();
+    const symbolName = extractSymbolNameAtOffset(text, offset); // Implement this helper function
+
+    connection.console.log(
+      `[Server] Received standard request: references for '${symbolName}' at ${params.position.line}:${params.position.character}`,
+    );
+
+    setProgress(
+      progressToken,
+      "begin",
+      `Finding references for '${symbolName}'...`,
+    );
+
+    if (!rootUri || !params.textDocument) {
+      console.warn(
+        "[Server] Cannot process referencesForSymbol: Missing rootUri or symbol.",
+      );
+
+      return null;
+    }
+
+    try {
+      if (!symbolName) {
+        console.warn("[Server] No symbol found at the given position.");
+        return null;
+      }
+
+      // Directly use the symbol passed from the client
+      // This is synchronous if index is in memory
+      // const results = indexer.findReferences(params.textDocument.uri, rootUri);
+      const results = indexer.findReferences(symbolName, rootUri); // Use the symbol name extracted from the document
+
+      connection.console.log(
+        `[Server] Found ${results.length} references for '${symbolName}'.`,
+      );
+      return results; // Return LSP Location array
+    } catch (error: any) {
+      connection.console.error(
+        `[Server] Error finding references via custom method: ${error.message || error}`,
+      );
+      return null;
+    } finally {
+      setTimeout(() => {
+        setProgress(progressToken, "end");
+      }, 1000);
+    }
+  },
+);
+
 // --- Document Synchronization ---
 
 // Manage open text documents
 documents.listen(connection);
 
-// Re-index when a relevant file is saved
+/**
+ * Handles the 'didSaveTextDocument' notification.
+ * Triggers re-indexing of the saved file if it's relevant (e.g., an Apex file within the project).
+ * @param params - Parameters containing the URI of the saved document.
+ */
 connection.onDidSaveTextDocument((params: DidSaveTextDocumentParams) => {
   connection.console.log(`[Server] File saved: ${params.textDocument.uri}`);
   if (rootUri) {

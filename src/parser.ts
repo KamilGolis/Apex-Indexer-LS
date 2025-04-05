@@ -50,6 +50,12 @@ const referenceQuery = `
 `;
 // --- END QUERIES ---
 
+/**
+ * Parses a single Apex file using Tree-sitter to find definitions and references.
+ * @param filePath - The absolute path to the file to parse.
+ * @param projectRoot - The absolute path to the project root directory (used for relative paths in results).
+ * @returns A promise resolving to an object containing arrays of found definitions and references.
+ */
 export async function parseFile(
   filePath: string,
   projectRoot: string,

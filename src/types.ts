@@ -1,5 +1,3 @@
-// src/types.ts
-import ts from 'tree-sitter'; // For internal use with parser
 import { TextDocumentIdentifier, Position as LspPosition, Location as LspLocation } from 'vscode-languageserver'; // Import LSP types
 
 // --- Internal Index Types ---
@@ -33,6 +31,12 @@ export interface Reference extends Location {
 export interface IndexData { // For potential disk caching, not used directly by LSP currently
   definitions: Definition[];
   references: Reference[];
+}
+
+export interface ReferenceParams {
+    textDocument: TextDocumentIdentifier; // The document in which the symbol is located
+    position: LspPosition;                // The position of the symbol in the document
+    context: { includeDeclaration: boolean }; // Context for the reference request
 }
 
 // --- Custom LSP Parameter Types ---
