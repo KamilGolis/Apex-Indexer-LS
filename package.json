@@ -1,0 +1,36 @@
+{
+  "name": "apex-indexer-ls",
+  "version": "0.1.0",
+  "description": "A basic LSP server for Apex definition/reference indexing using Tree-sitter",
+  "main": "dist/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js --stdio",
+    "dev": "ts-node src/server.ts --stdio",
+    "compile": "tsc",
+    "watch": "tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "lsp",
+    "apex",
+    "salesforce",
+    "tree-sitter",
+    "neovim"
+  ],
+  "author": "Kamil Golis",
+  "license": "MIT",
+  "dependencies": {
+    "fast-glob": "^3.3.2",
+    "tree-sitter": "^0.22.4",
+    "tree-sitter-sfapex": "^2.4.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.11"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
