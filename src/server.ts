@@ -9,9 +9,9 @@ import {
   InitializeResult,
   Location as LspLocation,
   DidSaveTextDocumentParams,
-  TextDocumentIdentifier,
   Position as LspPosition,
-  TextDocuments, // Import manager class from the main server package
+  TextDocuments,
+  TextDocumentPositionParams,
 } from "vscode-languageserver/node";
 
 // Import the TextDocument TYPE from its specific package
@@ -95,6 +95,7 @@ connection.onInitialize((params: InitializeParams) => {
 
       // Add other capabilities later if needed (hover, completion, etc.)
       referencesProvider: true,
+      definitionProvider: true,
     },
   };
 
@@ -177,9 +178,7 @@ connection.onRequest(
       );
       return null;
     } finally {
-      setTimeout(() => {
-        setProgress(progressToken, "end");
-      }, 1000);
+      setProgress(progressToken, "end", "", 100, 1000);
     }
   },
 );
@@ -228,9 +227,7 @@ connection.onRequest(
       );
       return null;
     } finally {
-      setTimeout(() => {
-        setProgress(progressToken, "end");
-      }, 1000);
+      setProgress(progressToken, "end", "", 100, 1000);
     }
   },
 );
@@ -238,7 +235,7 @@ connection.onRequest(
 connection.onRequest(
   "textDocument/references",
   (params: ReferenceParams): LspLocation[] | null => {
-    const progressToken = "standardRequest";
+    const progressToken = "standardReferences";
     const document = documents.get(params.textDocument.uri);
 
     if (!document) {
@@ -289,9 +286,64 @@ connection.onRequest(
       );
       return null;
     } finally {
-      setTimeout(() => {
-        setProgress(progressToken, "end");
-      }, 1000);
+      setProgress(progressToken, "end", "", 100, 1000);
+    }
+  },
+);
+
+connection.onRequest(
+  "textDocument/definition",
+  async (params: TextDocumentPositionParams): Promise<LspLocation[] | null> => {
+    const progressToken = "standardDefinition";
+    const document = documents.get(params.textDocument.uri);
+
+    if (!document) {
+      console.warn(`[Server] Document not found: ${params.textDocument.uri}`);
+      return null;
+    }
+
+    const offset = document.offsetAt(params.position);
+    const text = document.getText();
+    const symbolName = extractSymbolNameAtOffset(text, offset);
+
+    connection.console.log(
+      `[Server] Received standard request: definition for '${symbolName}' at ${params.position.line}:${params.position.character}`,
+    );
+
+    setProgress(
+      progressToken,
+      "begin",
+      `Finding definition for '${symbolName}'...`,
+    );
+
+    if (!rootUri || !symbolName) {
+      console.warn(
+        "[Server] Cannot process definition: Missing rootUri or symbol.",
+      );
+      return null;
+    }
+
+    try {
+      // Use the references map to find the definition
+      const definitions = indexer.findDefinitions(symbolName, rootUri);
+
+      if (definitions.length === 0) {
+        console.warn(`[Server] No definitions found for '${symbolName}'.`);
+        return null;
+      }
+
+      connection.console.log(
+        `[Server] Found ${definitions.length} definitions for '${symbolName}'.`,
+      );
+
+      return definitions; // Return LSP Location array
+    } catch (error: any) {
+      connection.console.error(
+        `[Server] Error finding definitions: ${error.message || error}`,
+      );
+      return null;
+    } finally {
+      setProgress(progressToken, "end", "", 100, 1000);
     }
   },
 );
