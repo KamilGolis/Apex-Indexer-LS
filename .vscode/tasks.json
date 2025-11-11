@@ -1,0 +1,54 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Server",
+      "type": "npm",
+      "script": "build:server",
+      "problemMatcher": "$tsc",
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "Build Client",
+      "type": "npm",
+      "script": "build:client",
+      "problemMatcher": "$tsc",
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "build",
+      "dependsOn": [
+        "Build Server",
+        "Build Client"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Watch Server",
+      "type": "npm",
+      "script": "watch",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "Watch Client",
+      "type": "shell",
+      "command": "cd client && npm run watch",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never"
+      }
+    }
+  ]
+}
