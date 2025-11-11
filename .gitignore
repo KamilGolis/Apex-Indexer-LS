@@ -4,3 +4,6 @@ dist
 bin
 .aider*
 .env
+client/out
+client/node_modules
+*.vsix

@@ -29,6 +29,50 @@ Apex-Indexer-LS is a lightweight Language Server Protocol (LSP) implementation d
    ```
 
 ## Usage
+
+### VSCode Extension
+
+The easiest way to use Apex-Indexer-LS with Visual Studio Code is through the included VSCode extension.
+
+#### Installation from Source
+
+1. Build the project:
+   ```bash
+   npm install
+   npm run build
+   ```
+
+2. Package the extension (optional, requires vsce):
+   ```bash
+   npm install -g @vscode/vsce
+   cd client
+   vsce package
+   ```
+
+3. Install the extension:
+   - Open VSCode
+   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
+   - Type "Extensions: Install from VSIX"
+   - Select the `.vsix` file from the `client` directory
+
+   Or install directly:
+   ```bash
+   cd client
+   code --install-extension apex-indexer-vscode-0.1.0.vsix
+   ```
+
+#### Using the Extension
+
+Once installed, the extension will automatically activate when you open Apex files (`.cls`, `.trigger`) in a workspace containing an `sfdx-project.json` file.
+
+**Features:**
+- **Go to Definition**: Press `F12` or right-click → "Go to Definition"
+- **Find References**: Press `Shift+F12` or right-click → "Find All References"
+
+For more details, see the [client README](client/README.md).
+
+### Neovim
+
 To use with Neovim and LSPconfig, add this config to your distro plugin configs. For example, for LazyVim, add the file below to `~/.local/share/nvim/lazy/nvim-lspconfig/lua/lspconfig/configs/apex_indexer_ls.lua`.
 
 ```lua
