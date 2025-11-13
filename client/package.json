@@ -1,0 +1,72 @@
+{
+  "name": "apex-indexer-vscode",
+  "displayName": "Apex Indexer",
+  "description": "Language support for Salesforce Apex using Apex-Indexer-LS",
+  "version": "0.1.0",
+  "publisher": "apex-indexer",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "apex",
+    "salesforce",
+    "lsp",
+    "language-server"
+  ],
+  "activationEvents": [
+    "onLanguage:apex"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "apex",
+        "aliases": [
+          "Apex",
+          "apex"
+        ],
+        "extensions": [
+          ".cls",
+          ".trigger"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Apex Indexer",
+      "properties": {
+        "apexIndexer.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "lint": "eslint src --ext ts",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.3",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.3.3"
+  }
+}
